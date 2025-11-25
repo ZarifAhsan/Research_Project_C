@@ -116,9 +116,6 @@ public class Main {
         return changes;
     }
 
-    // ------------------------------------------------------------
-    // Finds consecutive Up–Up streaks
-    // ------------------------------------------------------------
     private static List<Streak> findStreaks(List<Integer> upUpDays) {
         List<Streak> streaks = new ArrayList<>();
         if (upUpDays.isEmpty()) return streaks;
