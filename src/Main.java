@@ -9,11 +9,9 @@ public class Main {
         String filePathSP = "/Users/Zarif/IdeaProjects/Research_Project_C/src/CSV/SP_500.csv";
         String filePathVIX = "/Users/Zarif/IdeaProjects/Research_Project_C/src/CSV/VIX.csv";
 
-        // Load CSVs into 2D arrays: [row][0]=date, [row][1]=close
         String[][] spData = loadCSV(filePathSP);
         String[][] vixData = loadCSV(filePathVIX);
 
-        // Match by dates → only keep rows where both have the same date
         List<Double> closesSP = new ArrayList<>();
         List<Double> closesVIX = new ArrayList<>();
 
@@ -23,17 +21,14 @@ public class Main {
             String dateSP = spData[i][0];
             String dateVIX = vixData[j][0];
 
-            // dates match → store both closes
             if (dateSP.equals(dateVIX)) {
                 closesSP.add(Double.parseDouble(spData[i][1]));
                 closesVIX.add(Double.parseDouble(vixData[j][1]));
                 i++;
                 j++;
-            }
-            else if (dateSP.compareTo(dateVIX) < 0) {
+            } else if (dateSP.compareTo(dateVIX) < 0) {
                 i++;
-            }
-            else {
+            } else {
                 j++;
             }
         }
@@ -41,7 +36,6 @@ public class Main {
         List<Double> spChanges = getPercentChanges(closesSP);
         List<Double> vixChanges = getPercentChanges(closesVIX);
 
-        // Find up-up days
         List<Integer> upUpDays = new ArrayList<>();
         for (int k = 0; k < spChanges.size(); k++) {
             if (spChanges.get(k) > 0 && vixChanges.get(k) > 0) {
@@ -62,34 +56,44 @@ public class Main {
             }
 
             if (starts.isEmpty()) continue;
+            int[] DayForward = {1, 2, 3, 5, 10};
+            for (int z = 0; z < 5; z++) {
+                double totalReturn3 = 0;
+                int wins3 = 0;
 
-            double totalReturn3 = 0;
-            int wins3 = 0;
+                for (int start : starts) {
+                    start+=streakLen;
+                    int nextIdx = start + DayForward[z];
+                    if (nextIdx < closesSP.size()) {
+                        double futureReturn = (closesSP.get(nextIdx) - closesSP.get(start))
+                                / closesSP.get(start) * 100.0;
 
-            for (int start : starts) {
-                int nextIdx = start + 3;
-                if (nextIdx < closesSP.size()) {
-                    double futureReturn = (closesSP.get(nextIdx) - closesSP.get(start))
-                            / closesSP.get(start) * 100.0;
+                        totalReturn3 += futureReturn;
+                        if (futureReturn > 0) wins3++;
+                    }else {
+                        double futureReturn = (closesSP.getLast() - closesSP.getFirst())
+                                / closesSP.get(start) * 100.0;
 
-                    totalReturn3 += futureReturn;
-                    if (futureReturn > 0) wins3++;
+                        totalReturn3 += futureReturn;
+                        if (futureReturn > 0) wins3++;
+
+                    }
                 }
+
+                int total = starts.size();
+                double avg3 = totalReturn3 / total;
+                double winRate3 = (wins3 * 100.0) / total;
+
+                System.out.printf("%19d | %2d | %6d | %+8.2f%%             | %.1f%%\n",
+                        streakLen,DayForward[z], total, avg3, winRate3);
             }
-
-            int total = starts.size();
-            double avg3 = totalReturn3 / total;
-            double winRate3 = (wins3 * 100.0) / total;
-
-            System.out.printf("%19d | %6d | %+8.2f%%             | %.1f%%\n",
-                    streakLen, total, avg3, winRate3);
         }
     }
 
     private static String[][] loadCSV(String path) {
         try {
             List<String> lines = Files.readAllLines(new File(path).toPath());
-            lines.remove(0);
+            lines.removeFirst();
 
             String[][] data = new String[lines.size()][2];
 
@@ -134,8 +138,4 @@ public class Main {
         return streaks;
     }
 
-    static class Streak {
-        int startIndex, length;
-        Streak(int s, int l) { startIndex = s; length = l; }
-    }
 }
